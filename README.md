@@ -216,8 +216,6 @@ cd live/eu-south-2 && terragrunt run --all apply
 
 Deploys in order: `fck-nat → k3s-node → k3s-worker`. The VPC is already applied and skipped.
 
-After `k3s-worker` apply succeeds, a Terragrunt `after_hook` automatically runs `scripts/bootstrap-argocd.sh`. On a **first deploy** `KUBECONFIG` doesn't exist yet so the hook skips gracefully — continue to step 8. On **re-runs** with `KUBECONFIG` already set, ArgoCD bootstrap runs automatically and you can skip steps 8–9.
-
 ### 8. Copy kubeconfig
 
 Follow the [Copy kubeconfig](#copy-kubeconfig) steps in the **Access the cluster** section below.
@@ -230,7 +228,9 @@ Follow the [Copy kubeconfig](#copy-kubeconfig) steps in the **Access the cluster
 
 Installs ArgoCD via Helm, pre-creates the Cloudflare token Secrets in `cert-manager` and `external-dns` namespaces, and bootstraps the App of Apps pointing at `cluster-applications/`. ArgoCD then syncs Traefik, cert-manager, ExternalDNS, and Prometheus/Grafana automatically.
 
-The script is fully idempotent — safe to re-run at any time. It reads `domain_name` and `repo_url` directly from `live/eu-south-2/env.hcl`, so no extra env vars are needed beyond `KUBECONFIG`, `CLOUDFLARE_API_TOKEN`, and (for private repos) `GITHUB_TOKEN`.
+The script is fully idempotent — safe to re-run at any time. Required env vars: `KUBECONFIG`, `CLOUDFLARE_API_TOKEN`, `DOMAIN_NAME`, `REPO_URL`, and (for private repos) `GITHUB_TOKEN`.
+
+> **Note:** A Terragrunt `after_hook` on `k3s-worker` calls this script automatically on subsequent `apply` runs when `KUBECONFIG` is already set. On a first deploy it skips (no kubeconfig yet) — run it manually here.
 
 **Wait for DNS and TLS (~5 minutes):**
 
