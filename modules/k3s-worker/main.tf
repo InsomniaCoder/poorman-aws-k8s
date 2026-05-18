@@ -1,6 +1,6 @@
 # ── Locals ────────────────────────────────────────────────────
 locals {
-  common_tags = { Project = "poorman-k8s" }
+  common_tags = { Project = "poorman-aws-k8s" }
 }
 
 # ── Data sources ──────────────────────────────────────────────
@@ -21,7 +21,7 @@ data "aws_ami" "k3s" {
 
 # ── IAM ───────────────────────────────────────────────────────
 resource "aws_iam_role" "k3s_worker" {
-  name = "poorman-k8s-k3s-worker"
+  name = "poorman-aws-k8s-k3s-worker"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -36,7 +36,7 @@ resource "aws_iam_role" "k3s_worker" {
 }
 
 resource "aws_iam_role_policy" "k3s_worker" {
-  name = "poorman-k8s-k3s-worker"
+  name = "poorman-aws-k8s-k3s-worker"
   role = aws_iam_role.k3s_worker.id
 
   policy = jsonencode({
@@ -47,7 +47,7 @@ resource "aws_iam_role_policy" "k3s_worker" {
         Action = [
           "ssm:GetParameter"
         ]
-        Resource = "arn:aws:ssm:*:*:parameter/poorman-k8s/*"
+        Resource = "arn:aws:ssm:*:*:parameter/poorman-aws-k8s/*"
       }
     ]
   })
@@ -59,17 +59,17 @@ resource "aws_iam_role_policy_attachment" "k3s_worker_ssm" {
 }
 
 resource "aws_iam_instance_profile" "k3s_worker" {
-  name = "poorman-k8s-k3s-worker"
+  name = "poorman-aws-k8s-k3s-worker"
   role = aws_iam_role.k3s_worker.name
 }
 
 # ── Security group ────────────────────────────────────────────
 resource "aws_security_group" "k3s_worker" {
-  name_prefix = "poorman-k8s-k3s-worker-"
+  name_prefix = "poorman-aws-k8s-k3s-worker-"
   description = "K3S worker: all traffic from server SG, all traffic between workers, all outbound"
   vpc_id      = var.vpc_id
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-k3s-worker-sg" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s-worker-sg" })
 
   lifecycle {
     create_before_destroy = true
@@ -122,7 +122,7 @@ resource "aws_security_group_rule" "server_from_worker" {
 
 # ── Launch template ───────────────────────────────────────────
 resource "aws_launch_template" "k3s_worker" {
-  name_prefix   = "poorman-k8s-k3s-worker-"
+  name_prefix   = "poorman-aws-k8s-k3s-worker-"
   image_id      = data.aws_ami.k3s.id
   instance_type = var.instance_types[0]
 
@@ -155,7 +155,7 @@ resource "aws_launch_template" "k3s_worker" {
 
   tag_specifications {
     resource_type = "instance"
-    tags          = merge(local.common_tags, { Name = "poorman-k8s-k3s-worker" })
+    tags          = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s-worker" })
   }
 
   lifecycle {
@@ -165,7 +165,7 @@ resource "aws_launch_template" "k3s_worker" {
 
 # ── Auto Scaling Group ────────────────────────────────────────
 resource "aws_autoscaling_group" "k3s_worker" {
-  name                = "poorman-k8s-k3s-worker"
+  name                = "poorman-aws-k8s-k3s-worker"
   min_size            = 1
   max_size            = var.max_size
   desired_capacity    = 1
@@ -194,7 +194,7 @@ resource "aws_autoscaling_group" "k3s_worker" {
   }
 
   dynamic "tag" {
-    for_each = merge(local.common_tags, { Name = "poorman-k8s-k3s-worker" })
+    for_each = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s-worker" })
     content {
       key                 = tag.key
       value               = tag.value

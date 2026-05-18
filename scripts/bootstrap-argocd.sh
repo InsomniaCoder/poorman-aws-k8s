@@ -6,7 +6,7 @@ set -euo pipefail
 # Safe to re-run — all operations are idempotent.
 #
 # Required env vars:
-#   KUBECONFIG            path to kubeconfig  (~/.kube/poorman-k8s.yaml)
+#   KUBECONFIG            path to kubeconfig  (~/.kube/poorman-aws-k8s.yaml)
 #   CLOUDFLARE_API_TOKEN  Zone:DNS:Edit token
 #
 # Optional env vars (default: read from live/eu-south-2/env.hcl):
@@ -73,7 +73,7 @@ helm upgrade --install argocd argo/argo-cd \
 
 # ── Repo secret ────────────────────────────────────────────────────────────────
 echo "==> Creating ArgoCD repo secret"
-kubectl create secret generic repo-poorman-k8s \
+kubectl create secret generic repo-poorman-aws-k8s \
   --namespace argocd \
   --from-literal=type=git \
   --from-literal=url="$REPO_URL" \

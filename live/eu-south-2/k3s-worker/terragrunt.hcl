@@ -27,8 +27,8 @@ dependency "vpc" {
 dependency "k3s_node" {
   config_path = "../k3s-node"
   mock_outputs = {
-    ssm_token_path     = "/poorman-k8s/k3s-token"
-    ssm_server_ip_path = "/poorman-k8s/k3s-server-ip"
+    ssm_token_path     = "/poorman-aws-k8s/k3s-token"
+    ssm_server_ip_path = "/poorman-aws-k8s/k3s-server-ip"
     security_group_id  = "sg-00000000000000000"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]

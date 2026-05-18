@@ -35,12 +35,12 @@ source "amazon-ebs" "k3s" {
   }
 
   ssh_username                = "ec2-user"
-  ami_name                    = "poorman-k8s-k3s-${replace(var.k3s_version, "+", "-")}-{{timestamp}}"
+  ami_name                    = "poorman-aws-k8s-k3s-${replace(var.k3s_version, "+", "-")}-{{timestamp}}"
   subnet_id                   = var.subnet_id
   associate_public_ip_address = true
 
   tags = {
-    Project    = "poorman-k8s"
+    Project    = "poorman-aws-k8s"
     K3sVersion = var.k3s_version
   }
 }

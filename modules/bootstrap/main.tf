@@ -1,9 +1,9 @@
 resource "aws_s3_bucket" "state" {
-  bucket        = "poorman-k8s-tfstate-${var.account_id}"
+  bucket        = "poorman-aws-k8s-tfstate-${var.account_id}"
   force_destroy = false
 
   tags = {
-    Project   = "poorman-k8s"
+    Project   = "poorman-aws-k8s"
     ManagedBy = "terraform"
   }
 }

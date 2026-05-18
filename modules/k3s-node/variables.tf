@@ -50,5 +50,5 @@ variable "ami_owner" {
 variable "ami_name_filter" {
   type        = string
   default     = "al2023-ami-*-arm64"
-  description = "AMI name glob. Switch to \"poorman-k8s-k3s-*\" after running Packer."
+  description = "AMI name glob. Switch to \"poorman-aws-k8s-k3s-*\" after running Packer."
 }

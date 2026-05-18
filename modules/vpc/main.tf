@@ -1,5 +1,5 @@
 locals {
-  common_tags = { Project = "poorman-k8s" }
+  common_tags = { Project = "poorman-aws-k8s" }
 }
 
 resource "aws_vpc" "main" {
@@ -7,7 +7,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s" })
 }
 
 resource "aws_subnet" "public" {
@@ -16,7 +16,7 @@ resource "aws_subnet" "public" {
   availability_zone       = var.az
   map_public_ip_on_launch = false
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-public" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-public" })
 }
 
 resource "aws_subnet" "private" {
@@ -24,12 +24,12 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidr
   availability_zone = var.az
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-private" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-private" })
 }
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  tags   = merge(local.common_tags, { Name = "poorman-k8s-igw" })
+  tags   = merge(local.common_tags, { Name = "poorman-aws-k8s-igw" })
 }
 
 resource "aws_route_table" "public" {
@@ -40,12 +40,12 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-public-rt" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-public-rt" })
 }
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
-  tags   = merge(local.common_tags, { Name = "poorman-k8s-private-rt" })
+  tags   = merge(local.common_tags, { Name = "poorman-aws-k8s-private-rt" })
 }
 
 resource "aws_route_table_association" "public" {
@@ -65,7 +65,7 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.public.id, aws_route_table.private.id]
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-s3-endpoint" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-s3-endpoint" })
 }
 
 data "aws_region" "current" {}

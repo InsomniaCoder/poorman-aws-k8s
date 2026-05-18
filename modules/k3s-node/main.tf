@@ -1,6 +1,6 @@
 # ── Locals ────────────────────────────────────────────────────
 locals {
-  common_tags = { Project = "poorman-k8s" }
+  common_tags = { Project = "poorman-aws-k8s" }
 }
 
 # ── Data sources ──────────────────────────────────────────────
@@ -21,7 +21,7 @@ data "aws_ami" "k3s" {
 
 # ── IAM ───────────────────────────────────────────────────────
 resource "aws_iam_role" "k3s" {
-  name = "poorman-k8s-k3s-node"
+  name = "poorman-aws-k8s-k3s-node"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -36,7 +36,7 @@ resource "aws_iam_role" "k3s" {
 }
 
 resource "aws_iam_role_policy" "k3s" {
-  name = "poorman-k8s-k3s-node"
+  name = "poorman-aws-k8s-k3s-node"
   role = aws_iam_role.k3s.id
 
   policy = jsonencode({
@@ -58,7 +58,7 @@ resource "aws_iam_role_policy" "k3s" {
           "ssm:PutParameter",
           "ssm:GetParameter"
         ]
-        Resource = "arn:aws:ssm:*:*:parameter/poorman-k8s/*"
+        Resource = "arn:aws:ssm:*:*:parameter/poorman-aws-k8s/*"
       }
     ]
   })
@@ -70,14 +70,14 @@ resource "aws_iam_role_policy_attachment" "k3s_ssm" {
 }
 
 resource "aws_iam_instance_profile" "k3s" {
-  name = "poorman-k8s-k3s-node"
+  name = "poorman-aws-k8s-k3s-node"
   role = aws_iam_role.k3s.name
 }
 
 # ── EIP ───────────────────────────────────────────────────────
 resource "aws_eip" "k3s" {
   domain = "vpc"
-  tags   = merge(local.common_tags, { Name = "poorman-k8s-k3s-eip" })
+  tags   = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s-eip" })
 }
 
 # ── EBS data volume (persists K3S state across SPOT interruptions) ──
@@ -87,7 +87,7 @@ resource "aws_ebs_volume" "k3s_data" {
   type              = "gp3"
   encrypted         = true
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-k3s-data" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s-data" })
 
   lifecycle {
     prevent_destroy = true
@@ -99,11 +99,11 @@ resource "aws_ebs_volume" "k3s_data" {
 # ingress/egress blocks) so that k3s-worker can add its own rule to this SG
 # without causing perpetual drift on plan.
 resource "aws_security_group" "k3s" {
-  name_prefix = "poorman-k8s-k3s-node-"
+  name_prefix = "poorman-aws-k8s-k3s-node-"
   description = "K3S node: HTTP/S ingress, admin SSH/kubectl, all traffic from worker SG"
   vpc_id      = var.vpc_id
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-k3s-node-sg" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s-node-sg" })
 
   lifecycle {
     create_before_destroy = true
@@ -152,7 +152,7 @@ resource "aws_security_group_rule" "k3s_egress_all" {
 
 # ── Launch template ───────────────────────────────────────────
 resource "aws_launch_template" "k3s" {
-  name_prefix   = "poorman-k8s-k3s-"
+  name_prefix   = "poorman-aws-k8s-k3s-"
   image_id      = data.aws_ami.k3s.id
   instance_type = var.instance_types[0]
 
@@ -182,13 +182,13 @@ resource "aws_launch_template" "k3s" {
     eip_allocation_id  = aws_eip.k3s.allocation_id
     eip_public_ip      = aws_eip.k3s.public_ip
     data_volume_id     = aws_ebs_volume.k3s_data.id
-    ssm_token_path     = "/poorman-k8s/k3s-token"
-    ssm_server_ip_path = "/poorman-k8s/k3s-server-ip"
+    ssm_token_path     = "/poorman-aws-k8s/k3s-token"
+    ssm_server_ip_path = "/poorman-aws-k8s/k3s-server-ip"
   }))
 
   tag_specifications {
     resource_type = "instance"
-    tags          = merge(local.common_tags, { Name = "poorman-k8s-k3s" })
+    tags          = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s" })
   }
 
   lifecycle {
@@ -198,7 +198,7 @@ resource "aws_launch_template" "k3s" {
 
 # ── Auto Scaling Group ────────────────────────────────────────
 resource "aws_autoscaling_group" "k3s" {
-  name                = "poorman-k8s-k3s"
+  name                = "poorman-aws-k8s-k3s"
   min_size            = 1
   max_size            = 1
   desired_capacity    = 1
@@ -228,7 +228,7 @@ resource "aws_autoscaling_group" "k3s" {
   }
 
   dynamic "tag" {
-    for_each = merge(local.common_tags, { Name = "poorman-k8s-k3s" })
+    for_each = merge(local.common_tags, { Name = "poorman-aws-k8s-k3s" })
     content {
       key                 = tag.key
       value               = tag.value

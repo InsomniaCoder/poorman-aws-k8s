@@ -23,7 +23,7 @@ spec:
                 key: api-token
         domainFilters:
           - example.com
-        txtOwnerId: poorman-k8s
+        txtOwnerId: poorman-aws-k8s
         sources:
           - ingress
         nodeSelector:

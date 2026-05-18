@@ -1,4 +1,4 @@
-# poorman-k8s
+# poorman-aws-k8s
 
 ## Architecture
 

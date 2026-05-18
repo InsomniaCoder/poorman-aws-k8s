@@ -24,11 +24,11 @@ output "security_group_id" {
 }
 
 output "ssm_token_path" {
-  value       = "/poorman-k8s/k3s-token"
+  value       = "/poorman-aws-k8s/k3s-token"
   description = "SSM parameter path for the K3S node token."
 }
 
 output "ssm_server_ip_path" {
-  value       = "/poorman-k8s/k3s-server-ip"
+  value       = "/poorman-aws-k8s/k3s-server-ip"
   description = "SSM parameter path for the K3S server private IP."
 }

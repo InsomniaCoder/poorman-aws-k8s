@@ -1,4 +1,4 @@
-# poorman-k8s
+# poorman-aws-k8s
 
 > Kubernetes on AWS for the price of a Netflix subscription.
 
@@ -21,7 +21,7 @@ Every line item on a typical EKS bill has a cheaper open-source substitute — t
 
 ## Cost
 
-| Component | poorman-k8s | Full EKS stack |
+| Component | poorman-aws-k8s | Full EKS stack |
 | --- | --- | --- |
 | Control plane | $0 (bundled with server EC2) | $72/mo (managed EKS fee) |
 | Server / master compute | ~$12–18/mo (m7g.large SPOT) | $140–200/mo (2× m5.large on-demand) |
@@ -85,7 +85,7 @@ Ingress traffic path:
 ## Project structure
 
 ```text
-poorman-k8s/
+poorman-aws-k8s/
 ├── root.hcl                          # Terragrunt root: remote_state + provider generate
 ├── packer/
 │   └── k3s.pkr.hcl                   # Packer template — builds the custom K3S AMI
@@ -150,7 +150,7 @@ aws sts get-caller-identity   # verify it works
 locals {
   region       = "eu-south-2"   # AWS region
   az           = "eu-south-2a"  # Single AZ — must match region
-  project_name = "poorman-k8s"  # Prefix for S3 bucket, AMI, kubeconfig filename
+  project_name = "poorman-aws-k8s"  # Prefix for S3 bucket, AMI, kubeconfig filename
 }
 ```
 
@@ -173,7 +173,7 @@ export DOMAIN_NAME="yourdomain.com"
 export REPO_URL="https://github.com/your-org/your-fork"
 
 # Used by scripts/bootstrap-argocd.sh after the cluster is up
-export KUBECONFIG=~/.kube/poorman-k8s.yaml
+export KUBECONFIG=~/.kube/poorman-aws-k8s.yaml
 
 # Cloudflare API token — cert-manager DNS-01 + ExternalDNS
 # Create at: Cloudflare Dashboard → My Profile → API Tokens → Create Token
@@ -206,7 +206,7 @@ SUBNET_ID=$(cd live/eu-south-2/vpc && terragrunt output -raw public_subnet_id)
 cd packer && packer init . && packer build -var "subnet_id=$SUBNET_ID" k3s.pkr.hcl
 ```
 
-Packer launches a `t4g.small`, bakes K3S into an AMI (`poorman-k8s-k3s-*`), and terminates the instance. Takes ~7–10 minutes.
+Packer launches a `t4g.small`, bakes K3S into an AMI (`poorman-aws-k8s-k3s-*`), and terminates the instance. Takes ~7–10 minutes.
 
 ### 7. Deploy the core stack
 
@@ -223,7 +223,7 @@ After `k3s-worker` apply succeeds, a Terragrunt `after_hook` automatically runs 
 ```bash
 EIP=$(cd live/eu-south-2/k3s-node && terragrunt output -raw k3s_eip)
 INSTANCE_ID=$(aws ec2 describe-instances --region eu-south-2 \
-  --filters "Name=tag:Name,Values=poorman-k8s-k3s" "Name=instance-state-name,Values=running" \
+  --filters "Name=tag:Name,Values=poorman-aws-k8s-k3s" "Name=instance-state-name,Values=running" \
   --query "Reservations[].Instances[].InstanceId" --output text)
 
 CMD_ID=$(aws ssm send-command --region eu-south-2 \
@@ -237,13 +237,13 @@ sleep 5   # wait for the command to complete
 aws ssm get-command-invocation --region eu-south-2 \
   --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
   --query 'StandardOutputContent' --output text \
-  | sed "s/127.0.0.1/$EIP/" > ~/.kube/poorman-k8s.yaml
+  | sed "s/127.0.0.1/$EIP/" > ~/.kube/poorman-aws-k8s.yaml
 
-export KUBECONFIG=~/.kube/poorman-k8s.yaml
+export KUBECONFIG=~/.kube/poorman-aws-k8s.yaml
 kubectl get nodes
 ```
 
-The kubeconfig filename (`poorman-k8s.yaml`) matches `project_name` in `env.hcl`. If you changed it, update the filename accordingly.
+The kubeconfig filename (`poorman-aws-k8s.yaml`) matches `project_name` in `env.hcl`. If you changed it, update the filename accordingly.
 
 ### 9. Bootstrap ArgoCD and cluster applications
 
@@ -284,11 +284,11 @@ Instances have no SSH key pair. Access is via **AWS SSM Session Manager** only �
 
 ### Get instance ID and EIP (run once, reuse below)
 
-Commands below use the default `project_name = "poorman-k8s"`. If you changed `project_name` in `env.hcl`, replace `poorman-k8s` with your value in the tag filter and kubeconfig filename.
+Commands below use the default `project_name = "poorman-aws-k8s"`. If you changed `project_name` in `env.hcl`, replace `poorman-aws-k8s` with your value in the tag filter and kubeconfig filename.
 
 ```bash
 INSTANCE_ID=$(aws ec2 describe-instances --region eu-south-2 \
-  --filters "Name=tag:Name,Values=poorman-k8s-k3s" "Name=instance-state-name,Values=running" \
+  --filters "Name=tag:Name,Values=poorman-aws-k8s-k3s" "Name=instance-state-name,Values=running" \
   --query "Reservations[].Instances[].InstanceId" --output text)
 
 EIP=$(cd live/eu-south-2/k3s-node && terragrunt output -raw k3s_eip)
@@ -308,9 +308,9 @@ sleep 5   # wait for the command to complete
 aws ssm get-command-invocation --region eu-south-2 \
   --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
   --query 'StandardOutputContent' --output text \
-  | sed "s/127.0.0.1/$EIP/" > ~/.kube/poorman-k8s.yaml
+  | sed "s/127.0.0.1/$EIP/" > ~/.kube/poorman-aws-k8s.yaml
 
-export KUBECONFIG=~/.kube/poorman-k8s.yaml
+export KUBECONFIG=~/.kube/poorman-aws-k8s.yaml
 kubectl get nodes
 # NAME            STATUS   ROLES                  AGE   VERSION
 # ip-10-0-1-x     Ready    control-plane,master   2m    v1.x.x+k3s1

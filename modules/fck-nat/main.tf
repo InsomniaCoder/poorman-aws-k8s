@@ -1,14 +1,14 @@
 locals {
-  common_tags = { Project = "poorman-k8s" }
+  common_tags = { Project = "poorman-aws-k8s" }
 }
 
 resource "aws_eip" "fck_nat" {
   domain = "vpc"
-  tags   = merge(local.common_tags, { Name = "poorman-k8s-fck-nat-eip" })
+  tags   = merge(local.common_tags, { Name = "poorman-aws-k8s-fck-nat-eip" })
 }
 
 resource "aws_security_group" "fck_nat" {
-  name        = "poorman-k8s-fck-nat"
+  name        = "poorman-aws-k8s-fck-nat"
   description = "Allow private subnet traffic through fck-NAT"
   vpc_id      = var.vpc_id
 
@@ -27,14 +27,14 @@ resource "aws_security_group" "fck_nat" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = merge(local.common_tags, { Name = "poorman-k8s-fck-nat-sg" })
+  tags = merge(local.common_tags, { Name = "poorman-aws-k8s-fck-nat-sg" })
 }
 
 module "fck_nat" {
   source  = "RaJiska/fck-nat/aws"
   version = "1.3.0"
 
-  name                          = "poorman-k8s-fcknat"
+  name                          = "poorman-aws-k8s-fcknat"
   vpc_id                        = var.vpc_id
   subnet_id                     = var.public_subnet_id
   ha_mode                       = true
