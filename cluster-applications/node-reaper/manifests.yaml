@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: node-reaper
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-reaper
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: node-reaper
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-reaper
+subjects:
+  - kind: ServiceAccount
+    name: node-reaper
+    namespace: kube-system
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: node-reaper
+  namespace: kube-system
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: node-reaper
+          restartPolicy: OnFailure
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: "true"
+          tolerations:
+            - key: CriticalAddonsOnly
+              operator: Exists
+              effect: NoExecute
+          containers:
+            - name: reaper
+              image: bitnami/kubectl:latest
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  # Delete nodes that have been NotReady for more than 2 minutes.
+                  # K3S does not remove node objects when instances are terminated —
+                  # this prevents stale NotReady entries from accumulating.
+                  THRESHOLD=120
+                  NOW=$(date +%s)
+
+                  kubectl get nodes \
+                    -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\t"}{.lastTransitionTime}{end}{"\n"}{end}' | \
+                  while IFS=$'\t' read -r node status ts; do
+                    if [ "$status" = "False" ] || [ "$status" = "Unknown" ]; then
+                      ts_epoch=$(date -d "$ts" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$ts" +%s)
+                      age=$((NOW - ts_epoch))
+                      if [ "$age" -gt "$THRESHOLD" ]; then
+                        echo "Deleting stale NotReady node: $node (NotReady for ${age}s)"
+                        kubectl delete node "$node"
+                      fi
+                    fi
+                  done

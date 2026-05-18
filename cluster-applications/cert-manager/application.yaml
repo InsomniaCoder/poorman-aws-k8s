@@ -1,0 +1,68 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.16.2
+    helm:
+      values: |
+        crds:
+          enabled: true
+          keep: true
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: "true"
+        tolerations:
+          - key: CriticalAddonsOnly
+            operator: Exists
+            effect: NoExecute
+        cainjector:
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: "true"
+          tolerations:
+            - key: CriticalAddonsOnly
+              operator: Exists
+              effect: NoExecute
+        webhook:
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: "true"
+          tolerations:
+            - key: CriticalAddonsOnly
+              operator: Exists
+              effect: NoExecute
+        extraObjects:
+          - |
+            apiVersion: cert-manager.io/v1
+            kind: ClusterIssuer
+            metadata:
+              name: letsencrypt-prod
+              annotations:
+                argocd.argoproj.io/sync-wave: "1"
+            spec:
+              acme:
+                server: https://acme-v02.api.letsencrypt.org/directory
+                email: admin@example.com
+                privateKeySecretRef:
+                  name: letsencrypt-prod-key
+                solvers:
+                  - dns01:
+                      cloudflare:
+                        apiTokenSecretRef:
+                          name: cloudflare-api-token
+                          key: api-token
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

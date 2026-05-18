@@ -1,0 +1,20 @@
+global:
+  nodeSelector:
+    node-role.kubernetes.io/control-plane: "true"
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+      effect: NoExecute
+
+server:
+  ingress:
+    enabled: true
+    hostname: argocd.${DOMAIN}
+    ingressClassName: traefik
+    tls: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+
+configs:
+  params:
+    server.insecure: "true"

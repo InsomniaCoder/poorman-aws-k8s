@@ -1,0 +1,15 @@
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+**/.terragrunt-cache/
+*.tfvars
+# Terragrunt-generated files in live/ units — do not commit
+live/**/backend.tf
+live/**/provider.tf
+**/.terraform.lock.hcl
+
+# Local docs scratch directory
+docs/
+
+# Local environment variables (not committed — contains dynamic IP)
+.env

@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 32.1.1
+    helm:
+      values: |
+        deployment:
+          replicas: 1
+        service:
+          type: LoadBalancer
+        nodeSelector:
+          node-role.kubernetes.io/control-plane: "true"
+        tolerations:
+          - key: CriticalAddonsOnly
+            operator: Exists
+            effect: NoExecute
+        ingressRoute:
+          dashboard:
+            enabled: false
+        ports:
+          traefik:
+            expose:
+              default: false
+        providers:
+          kubernetesCRD:
+            enabled: true
+          kubernetesIngress:
+            enabled: true
+            publishedService:
+              enabled: true
+              pathOverride: "traefik/traefik"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
