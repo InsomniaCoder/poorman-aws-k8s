@@ -220,30 +220,7 @@ After `k3s-worker` apply succeeds, a Terragrunt `after_hook` automatically runs 
 
 ### 8. Copy kubeconfig
 
-```bash
-EIP=$(cd live/eu-south-2/k3s-node && terragrunt output -raw k3s_eip)
-INSTANCE_ID=$(aws ec2 describe-instances --region eu-south-2 \
-  --filters "Name=tag:Name,Values=poorman-aws-k8s-k3s" "Name=instance-state-name,Values=running" \
-  --query "Reservations[].Instances[].InstanceId" --output text)
-
-CMD_ID=$(aws ssm send-command --region eu-south-2 \
-  --instance-ids "$INSTANCE_ID" \
-  --document-name "AWS-RunShellScript" \
-  --parameters '{"commands":["sudo cat /etc/rancher/k3s/k3s.yaml"]}' \
-  --query 'Command.CommandId' --output text)
-
-sleep 5   # wait for the command to complete
-
-aws ssm get-command-invocation --region eu-south-2 \
-  --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
-  --query 'StandardOutputContent' --output text \
-  | sed "s/127.0.0.1/$EIP/" > ~/.kube/poorman-aws-k8s.yaml
-
-export KUBECONFIG=~/.kube/poorman-aws-k8s.yaml
-kubectl get nodes
-```
-
-The kubeconfig filename (`poorman-aws-k8s.yaml`) matches `project_name` in `env.hcl`. If you changed it, update the filename accordingly.
+Follow the [Copy kubeconfig](#copy-kubeconfig) steps in the **Access the cluster** section below.
 
 ### 9. Bootstrap ArgoCD and cluster applications
 
